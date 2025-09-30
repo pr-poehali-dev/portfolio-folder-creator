@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -133,14 +134,22 @@ const Index = () => {
                 <Icon name="BookOpen" size={24} className="text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">ПринтМастер</h1>
+                <h1 className="text-xl font-bold text-gray-900">papka.moscow</h1>
                 <p className="text-xs text-gray-500">Портфолио работ</p>
               </div>
             </div>
-            <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90">
-              <Icon name="Phone" size={16} className="mr-2" />
-              Заказать
-            </Button>
+            <div className="flex items-center gap-3">
+              <Link to="/blog">
+                <Button variant="ghost">
+                  <Icon name="Newspaper" size={16} className="mr-2" />
+                  Блог
+                </Button>
+              </Link>
+              <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90">
+                <Icon name="Phone" size={16} className="mr-2" />
+                Заказать
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
@@ -255,13 +264,17 @@ const Index = () => {
             Свяжитесь с нами для расчета стоимости и обсуждения деталей заказа
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90">
-              <Icon name="Phone" size={20} className="mr-2" />
-              +7 (495) 123-45-67
+            <Button size="lg" className="bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90" asChild>
+              <a href="tel:+79032469318">
+                <Icon name="Phone" size={20} className="mr-2" />
+                +7 903 246-93-18
+              </a>
             </Button>
-            <Button size="lg" variant="outline">
-              <Icon name="Mail" size={20} className="mr-2" />
-              info@printmaster.ru
+            <Button size="lg" variant="outline" asChild>
+              <a href="mailto:info@papka.moscow">
+                <Icon name="Mail" size={20} className="mr-2" />
+                info@papka.moscow
+              </a>
             </Button>
           </div>
         </div>
@@ -272,7 +285,7 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8 text-center md:text-left">
             <div>
               <h3 className="text-lg font-bold mb-3 bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-                ПринтМастер
+                papka.moscow
               </h3>
               <p className="text-gray-400 text-sm">
                 Производство полиграфической продукции премиум-класса с 2009 года
@@ -281,13 +294,17 @@ const Index = () => {
             <div>
               <h4 className="font-semibold mb-3">Контакты</h4>
               <div className="space-y-2 text-sm text-gray-400">
-                <p className="flex items-center gap-2 justify-center md:justify-start">
+                <a href="tel:+79032469318" className="flex items-center gap-2 justify-center md:justify-start hover:text-amber-400 transition-colors">
                   <Icon name="Phone" size={16} />
-                  +7 (495) 123-45-67
-                </p>
-                <p className="flex items-center gap-2 justify-center md:justify-start">
+                  +7 903 246-93-18
+                </a>
+                <a href="mailto:info@papka.moscow" className="flex items-center gap-2 justify-center md:justify-start hover:text-amber-400 transition-colors">
                   <Icon name="Mail" size={16} />
-                  info@printmaster.ru
+                  info@papka.moscow
+                </a>
+                <p className="flex items-center gap-2 justify-center md:justify-start">
+                  <Icon name="MapPin" size={16} />
+                  1-ая Фрезерная 2/1 стр 1
                 </p>
               </div>
             </div>
@@ -301,7 +318,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>© 2024 ПринтМастер. Все права защищены.</p>
+            <p>© 2024 papka.moscow. Все права защищены.</p>
           </div>
         </div>
       </footer>
