@@ -28,7 +28,7 @@ const Index = () => {
       title: 'Меню для ресторана "Премиум"',
       category: 'menu',
       price: 'от 2 500 ₽',
-      image: '/img/41d81912-9f74-494e-bfb1-6a2414456757.jpg',
+      image: '/img/8ffb4be5-fdbf-42eb-bc68-0cf711115a50.jpg',
       description: 'Элегантные папки для меню ресторанов премиум-класса. Натуральная кожа, индивидуальное тиснение логотипа.',
       features: ['Тиснение фольгой', 'Натуральная кожа', 'Индивидуальный дизайн', 'Влагостойкое покрытие'],
       materials: ['Натуральная кожа', 'Бархатная подкладка', 'Металлические уголки'],
@@ -39,7 +39,7 @@ const Index = () => {
       title: 'Меню для кафе "Классик"',
       category: 'menu',
       price: 'от 1 800 ₽',
-      image: '/img/41d81912-9f74-494e-bfb1-6a2414456757.jpg',
+      image: '/img/8ffb4be5-fdbf-42eb-bc68-0cf711115a50.jpg',
       description: 'Практичные и стильные папки для меню. Искусственная кожа высокого качества.',
       features: ['Печать логотипа', 'Износостойкая поверхность', 'Быстрое изготовление'],
       materials: ['Искусственная кожа', 'Плотный картон'],
@@ -50,7 +50,7 @@ const Index = () => {
       title: 'Адресная папка "Корпоративная"',
       category: 'folder',
       price: 'от 2 100 ₽',
-      image: '/img/46eee740-9ed6-4a7f-b704-e3da630c96f6.jpg',
+      image: '/img/05840f5b-bd40-49b3-9963-3eba3115df7d.jpg',
       description: 'Представительские папки для документов. Идеальны для деловых встреч и презентаций.',
       features: ['Логотип компании', 'Карман для визиток', 'Подкладка из бархата', 'Магнитный замок'],
       materials: ['Натуральная кожа', 'Металлическая фурнитура', 'Бархатная подкладка'],
@@ -61,7 +61,7 @@ const Index = () => {
       title: 'Папка для документов "Офисная"',
       category: 'folder',
       price: 'от 1 500 ₽',
-      image: '/img/46eee740-9ed6-4a7f-b704-e3da630c96f6.jpg',
+      image: '/img/05840f5b-bd40-49b3-9963-3eba3115df7d.jpg',
       description: 'Практичные папки для повседневного использования в офисе.',
       features: ['Прочная конструкция', 'Несколько отделений', 'Брендирование'],
       materials: ['Эко-кожа', 'Усиленный картон'],
@@ -72,7 +72,7 @@ const Index = () => {
       title: 'Корочки для диплома "Люкс"',
       category: 'cover',
       price: 'от 3 200 ₽',
-      image: '/img/2f49c79c-980d-4b69-b48d-e31510186673.jpg',
+      image: '/img/217ec340-5e5a-4e3b-a6dc-31b3c06039fe.jpg',
       description: 'Твердый переплет премиум-класса для дипломов и сертификатов.',
       features: ['Тиснение золотом', 'Твердая обложка', 'Шелковая лента-закладка', 'Гравировка'],
       materials: ['Натуральная кожа', 'Картон 3мм', 'Шелковая лента'],
@@ -83,7 +83,7 @@ const Index = () => {
       title: 'Корочки универсальные',
       category: 'cover',
       price: 'от 2 400 ₽',
-      image: '/img/2f49c79c-980d-4b69-b48d-e31510186673.jpg',
+      image: '/img/217ec340-5e5a-4e3b-a6dc-31b3c06039fe.jpg',
       description: 'Твердый переплет для документов, сертификатов, благодарностей.',
       features: ['Различные цвета', 'Тиснение', 'Прочная конструкция'],
       materials: ['Баладек', 'Картон 2мм'],
@@ -94,7 +94,7 @@ const Index = () => {
       title: 'Меню для бара "Минимал"',
       category: 'menu',
       price: 'от 1 600 ₽',
-      image: '/img/41d81912-9f74-494e-bfb1-6a2414456757.jpg',
+      image: '/img/8ffb4be5-fdbf-42eb-bc68-0cf711115a50.jpg',
       description: 'Стильные папки в минималистичном дизайне. Подходят для баров и кафе.',
       features: ['Современный дизайн', 'Легкая очистка', 'Влагостойкость'],
       materials: ['Искусственная кожа', 'Пластиковые вставки'],
@@ -105,7 +105,7 @@ const Index = () => {
       title: 'Адресная папка "VIP"',
       category: 'folder',
       price: 'от 4 500 ₽',
-      image: '/img/46eee740-9ed6-4a7f-b704-e3da630c96f6.jpg',
+      image: '/img/05840f5b-bd40-49b3-9963-3eba3115df7d.jpg',
       description: 'Эксклюзивные папки для особых клиентов. Ручная работа.',
       features: ['Ручная прошивка', 'Позолоченная фурнитура', 'Именная гравировка', 'Подарочная упаковка'],
       materials: ['Итальянская кожа', 'Латунная фурнитура', 'Шелк'],
@@ -139,15 +139,23 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Link to="/calculator">
+                <Button variant="ghost">
+                  <Icon name="Calculator" size={16} className="mr-2" />
+                  Калькулятор
+                </Button>
+              </Link>
               <Link to="/blog">
                 <Button variant="ghost">
                   <Icon name="Newspaper" size={16} className="mr-2" />
                   Блог
                 </Button>
               </Link>
-              <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90">
-                <Icon name="Phone" size={16} className="mr-2" />
-                Заказать
+              <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90" asChild>
+                <a href="tel:+79032469318">
+                  <Icon name="Phone" size={16} className="mr-2" />
+                  Заказать
+                </a>
               </Button>
             </div>
           </div>

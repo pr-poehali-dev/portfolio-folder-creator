@@ -30,7 +30,7 @@ const Blog = () => {
       category: 'Меню',
       date: '15 сентября 2024',
       readTime: '5 мин',
-      image: '/img/41d81912-9f74-494e-bfb1-6a2414456757.jpg'
+      image: '/img/8ffb4be5-fdbf-42eb-bc68-0cf711115a50.jpg'
     },
     {
       id: '2',
@@ -40,7 +40,7 @@ const Blog = () => {
       category: 'Папки',
       date: '10 сентября 2024',
       readTime: '4 мин',
-      image: '/img/46eee740-9ed6-4a7f-b704-e3da630c96f6.jpg'
+      image: '/img/05840f5b-bd40-49b3-9963-3eba3115df7d.jpg'
     },
     {
       id: '3',
@@ -50,7 +50,7 @@ const Blog = () => {
       category: 'Корочки',
       date: '5 сентября 2024',
       readTime: '6 мин',
-      image: '/img/2f49c79c-980d-4b69-b48d-e31510186673.jpg'
+      image: '/img/217ec340-5e5a-4e3b-a6dc-31b3c06039fe.jpg'
     },
     {
       id: '4',
@@ -60,7 +60,7 @@ const Blog = () => {
       category: 'Меню',
       date: '1 сентября 2024',
       readTime: '7 мин',
-      image: '/img/41d81912-9f74-494e-bfb1-6a2414456757.jpg'
+      image: '/img/8ffb4be5-fdbf-42eb-bc68-0cf711115a50.jpg'
     },
     {
       id: '5',
@@ -70,7 +70,7 @@ const Blog = () => {
       category: 'Папки',
       date: '28 августа 2024',
       readTime: '5 мин',
-      image: '/img/46eee740-9ed6-4a7f-b704-e3da630c96f6.jpg'
+      image: '/img/05840f5b-bd40-49b3-9963-3eba3115df7d.jpg'
     },
     {
       id: '6',
@@ -80,7 +80,7 @@ const Blog = () => {
       category: 'Производство',
       date: '25 августа 2024',
       readTime: '8 мин',
-      image: '/img/41d81912-9f74-494e-bfb1-6a2414456757.jpg'
+      image: '/img/8ffb4be5-fdbf-42eb-bc68-0cf711115a50.jpg'
     }
   ];
 
