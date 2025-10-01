@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
+
+const PRODUCTS_API = 'https://functions.poehali.dev/65b050bc-83c5-4cd4-abc4-6d565bbe765e';
 
 interface Product {
   id: number;
@@ -21,8 +23,26 @@ interface Product {
 const Index = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [filter, setFilter] = useState<string>('all');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const products: Product[] = [
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const response = await fetch(PRODUCTS_API);
+        const data = await response.json();
+        setProducts(data);
+      } catch (err) {
+        console.error('Ошибка загрузки товаров:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadProducts();
+  }, []);
+
+  const oldProducts: Product[] = [
     {
       id: 1,
       title: 'Меню "Пиратский дневник"',
@@ -320,17 +340,6 @@ const Index = () => {
       materials: ['Премиум материал', 'Золотое тиснение', 'Картон 3мм'],
       sizes: ['А4 (210×297мм)']
     },
-    {
-      id: 28,
-      title: 'Меню "Restaurant Briess"',
-      category: 'menu',
-      price: 'от 1 500 ₽',
-      image: 'https://cdn.poehali.dev/files/46339c57-487a-4cb1-8ad1-bab82a336226.jpg',
-      description: 'Стильное серое меню с черным тиснением логотипа ресторана и мотоцикла.',
-      features: ['Корпоративный стиль', 'Тиснение логотипа', 'Карман внутри', 'Минимализм'],
-      materials: ['Премиум материал', 'Блинтовое тиснение', 'Внутренний карман'],
-      sizes: ['А4 (210×297мм)', 'А5 (148×210мм)']
-    }
   ];
 
   const categories = [
@@ -341,17 +350,26 @@ const Index = () => {
   ];
 
   const shuffledProducts = useMemo(() => {
+    if (products.length === 0) return [];
     const shuffled = [...products];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
-  }, []);
+  }, [products]);
 
   const filteredProducts = filter === 'all' 
     ? shuffledProducts 
     : shuffledProducts.filter(p => p.category === filter);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-gray-600">Загрузка товаров...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
