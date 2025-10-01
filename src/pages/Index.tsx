@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -340,9 +340,18 @@ const Index = () => {
     { id: 'cover', name: 'Корочки', icon: 'Book' }
   ];
 
+  const shuffledProducts = useMemo(() => {
+    const shuffled = [...products];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, []);
+
   const filteredProducts = filter === 'all' 
-    ? products 
-    : products.filter(p => p.category === filter);
+    ? shuffledProducts 
+    : shuffledProducts.filter(p => p.category === filter);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
