@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -412,16 +413,11 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="productImage">URL изображения</Label>
-                    <Input
-                      id="productImage"
-                      value={product.image}
-                      onChange={(e) => setProduct({ ...product, image: e.target.value })}
-                      placeholder="/img/название.jpg"
-                      className="mt-2"
-                    />
-                  </div>
+                  <ImageUpload
+                    value={product.image}
+                    onChange={(url) => setProduct({ ...product, image: url })}
+                    label="Изображение товара"
+                  />
 
                   <div className="flex gap-3 pt-4">
                     <Button 
