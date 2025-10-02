@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -5,21 +6,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Icon from '@/components/ui/icon';
 
 interface BlogPostData {
+  id: number;
   slug: string;
   title: string;
   excerpt: string;
   category: string;
-  date: string;
-  readTime: string;
+  created_at: string;
+  read_time: string;
   image: string;
-  content: string[];
-  tags: string[];
+  content: string;
 }
+
+const BLOG_API = 'https://functions.poehali.dev/03d15e5b-27a3-4806-861b-3ecb95d625bd';
 
 const BlogPost = () => {
   const { slug } = useParams();
+  const [post, setPost] = useState<BlogPostData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const blogPosts: BlogPostData[] = [
+  useEffect(() => {
+    if (slug) {
+      loadPost(slug);
+    }
+  }, [slug]);
+
+  const loadPost = async (slug: string) => {
+    try {
+      const response = await fetch(`${BLOG_API}?slug=${slug}`);
+      const data = await response.json();
+      setPost(data);
+    } catch (err) {
+      console.error('Ошибка загрузки поста:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  const blogPostsOld: BlogPostData[] = [
     {
       slug: 'kak-vybrat-papku-dlya-menu',
       title: 'Как выбрать папку для меню ресторана: полное руководство',
@@ -135,12 +164,15 @@ const BlogPost = () => {
     }
   ];
 
-  const currentPost = blogPosts.find(post => post.slug === slug);
-  const relatedPosts = blogPosts
-    .filter(post => post.slug !== slug && post.category === currentPost?.category)
-    .slice(0, 3);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Загрузка...</div>
+      </div>
+    );
+  }
 
-  if (!currentPost) {
+  if (!post) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -192,50 +224,35 @@ const BlogPost = () => {
             <Link to="/blog">
               <Badge className="mb-4 bg-amber-100 text-amber-800 hover:bg-amber-200 cursor-pointer">
                 <Icon name="ArrowLeft" size={12} className="mr-1" />
-                {currentPost.category}
+                {post.category}
               </Badge>
             </Link>
             <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-              {currentPost.title}
+              {post.title}
             </h1>
             <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-6">
               <span className="flex items-center gap-2">
                 <Icon name="Calendar" size={18} />
-                {currentPost.date}
+                {formatDate(post.created_at)}
               </span>
               <span className="flex items-center gap-2">
                 <Icon name="Clock" size={18} />
-                {currentPost.readTime}
+                {post.read_time}
               </span>
             </div>
           </div>
 
-          <div className="mb-12 rounded-2xl overflow-hidden shadow-2xl">
-            <img 
-              src={currentPost.image}
-              alt={currentPost.title}
-              className="w-full aspect-video object-cover"
-            />
-          </div>
-
-          <div className="prose prose-lg max-w-none">
-            {currentPost.content.map((paragraph, idx) => (
-              <p key={idx} className="mb-6 text-gray-700 leading-relaxed">
-                {paragraph}
-              </p>
-            ))}
-          </div>
-
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-500 mb-4">Теги</h3>
-            <div className="flex flex-wrap gap-2">
-              {currentPost.tags.map((tag, idx) => (
-                <Badge key={idx} variant="secondary" className="text-sm">
-                  #{tag}
-                </Badge>
-              ))}
+          {post.image && (
+            <div className="mb-12 rounded-2xl overflow-hidden shadow-2xl">
+              <img 
+                src={post.image}
+                alt={post.title}
+                className="w-full aspect-video object-cover"
+              />
             </div>
-          </div>
+          )}
+
+          <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
         </div>
       </article>
 

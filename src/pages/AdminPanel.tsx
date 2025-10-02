@@ -7,9 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 
 const PRODUCTS_API = 'https://functions.poehali.dev/65b050bc-83c5-4cd4-abc4-6d565bbe765e';
+const BLOG_API = 'https://functions.poehali.dev/03d15e5b-27a3-4806-861b-3ecb95d625bd';
 
 interface Product {
   id: number;
@@ -23,11 +25,26 @@ interface Product {
   sizes: string[];
 }
 
+interface BlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  image: string;
+  read_time: string;
+  created_at?: string;
+}
+
 export default function AdminPanel() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,6 +54,7 @@ export default function AdminPanel() {
       return;
     }
     loadProducts();
+    loadBlogPosts();
   }, [navigate]);
 
   const loadProducts = async () => {
@@ -48,6 +66,16 @@ export default function AdminPanel() {
       console.error('Ошибка загрузки товаров:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadBlogPosts = async () => {
+    try {
+      const response = await fetch(BLOG_API);
+      const data = await response.json();
+      setBlogPosts(data);
+    } catch (err) {
+      console.error('Ошибка загрузки постов:', err);
     }
   };
 
@@ -85,7 +113,7 @@ export default function AdminPanel() {
 
       if (response.ok) {
         await loadProducts();
-        setIsDialogOpen(false);
+        setIsProductDialogOpen(false);
         setEditingProduct(null);
       }
     } catch (err) {
@@ -109,14 +137,75 @@ export default function AdminPanel() {
     }
   };
 
+  const handleSavePost = async (formData: FormData) => {
+    const postData = {
+      title: formData.get('title') as string,
+      slug: formData.get('slug') as string,
+      excerpt: formData.get('excerpt') as string,
+      content: formData.get('content') as string,
+      category: formData.get('category') as string,
+      image: formData.get('image') as string,
+      read_time: formData.get('read_time') as string,
+    };
+
+    try {
+      const url = editingPost
+        ? `${BLOG_API}?id=${editingPost.id}`
+        : BLOG_API;
+      const method = editingPost ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
+
+      if (response.ok) {
+        await loadBlogPosts();
+        setIsPostDialogOpen(false);
+        setEditingPost(null);
+      }
+    } catch (err) {
+      console.error('Ошибка сохранения поста:', err);
+    }
+  };
+
+  const handleDeletePost = async (id: number) => {
+    if (!confirm('Удалить пост?')) return;
+
+    try {
+      const response = await fetch(`${BLOG_API}?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await loadBlogPosts();
+      }
+    } catch (err) {
+      console.error('Ошибка удаления:', err);
+    }
+  };
+
   const openCreateDialog = () => {
     setEditingProduct(null);
-    setIsDialogOpen(true);
+    setIsProductDialogOpen(true);
   };
 
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
-    setIsDialogOpen(true);
+    setIsProductDialogOpen(true);
+  };
+
+  const openCreatePostDialog = () => {
+    setEditingPost(null);
+    setIsPostDialogOpen(true);
+  };
+
+  const openEditPostDialog = (post: BlogPost) => {
+    setEditingPost(post);
+    setIsPostDialogOpen(true);
   };
 
   if (isLoading) {
@@ -132,94 +221,298 @@ export default function AdminPanel() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Админ-панель</h1>
-          <div className="flex gap-2">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={openCreateDialog}>
-                  <Icon name="Plus" size={20} className="mr-2" />
-                  Добавить товар
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingProduct ? 'Редактировать товар' : 'Новый товар'}
-                  </DialogTitle>
-                  <DialogDescription>
-                    Заполните информацию о товаре
-                  </DialogDescription>
-                </DialogHeader>
-                <ProductForm
-                  product={editingProduct}
-                  onSave={handleSave}
-                  onCancel={() => setIsDialogOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
-            <Button variant="outline" onClick={handleLogout}>
-              <Icon name="LogOut" size={20} className="mr-2" />
-              Выйти
-            </Button>
-          </div>
+          <Button variant="outline" onClick={handleLogout}>
+            <Icon name="LogOut" size={20} className="mr-2" />
+            Выйти
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <Card key={product.id}>
-              <CardHeader>
-                <img
-                  src={product.image}
-                  alt={product.title}
-                  className="w-full h-48 object-cover rounded-lg mb-4"
-                />
-                <CardTitle className="text-lg">{product.title}</CardTitle>
-                <CardDescription>{product.price}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {product.description}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditDialog(product)}
-                    className="flex-1"
-                  >
-                    <Icon name="Edit" size={16} className="mr-1" />
-                    Изменить
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(product.id)}
-                    className="flex-1"
-                  >
-                    <Icon name="Trash2" size={16} className="mr-1" />
-                    Удалить
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="products">Товары</TabsTrigger>
+            <TabsTrigger value="blog">Блог</TabsTrigger>
+          </TabsList>
 
-        {products.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Icon name="Package" size={48} className="mb-4 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground mb-4">
-                Товаров пока нет
-              </p>
-              <Button onClick={openCreateDialog}>
-                <Icon name="Plus" size={20} className="mr-2" />
-                Добавить первый товар
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+          <TabsContent value="products" className="mt-6">
+            <div className="flex justify-end mb-6">
+              <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={openCreateDialog}>
+                    <Icon name="Plus" size={20} className="mr-2" />
+                    Добавить товар
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingProduct ? 'Редактировать товар' : 'Новый товар'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Заполните информацию о товаре
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ProductForm
+                    product={editingProduct}
+                    onSave={handleSave}
+                    onCancel={() => setIsProductDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map((product) => (
+                <Card key={product.id}>
+                  <CardHeader>
+                    <img
+                      src={product.image}
+                      alt={product.title}
+                      className="w-full h-48 object-cover rounded-lg mb-4"
+                    />
+                    <CardTitle className="text-lg">{product.title}</CardTitle>
+                    <CardDescription>{product.price}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      {product.description}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(product)}
+                        className="flex-1"
+                      >
+                        <Icon name="Edit" size={16} className="mr-1" />
+                        Изменить
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(product.id)}
+                        className="flex-1"
+                      >
+                        <Icon name="Trash2" size={16} className="mr-1" />
+                        Удалить
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {products.length === 0 && (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Icon name="Package" size={48} className="mb-4 text-muted-foreground" />
+                  <p className="text-lg text-muted-foreground mb-4">
+                    Товаров пока нет
+                  </p>
+                  <Button onClick={openCreateDialog}>
+                    <Icon name="Plus" size={20} className="mr-2" />
+                    Добавить первый товар
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="blog" className="mt-6">
+            <div className="flex justify-end mb-6">
+              <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={openCreatePostDialog}>
+                    <Icon name="Plus" size={20} className="mr-2" />
+                    Добавить пост
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingPost ? 'Редактировать пост' : 'Новый пост'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Заполните информацию о посте блога
+                    </DialogDescription>
+                  </DialogHeader>
+                  <BlogPostForm
+                    post={editingPost}
+                    onSave={handleSavePost}
+                    onCancel={() => setIsPostDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {blogPosts.map((post) => (
+                <Card key={post.id}>
+                  <CardHeader>
+                    {post.image && (
+                      <img
+                        src={post.image}
+                        alt={post.title}
+                        className="w-full h-48 object-cover rounded-lg mb-4"
+                      />
+                    )}
+                    <CardTitle className="text-lg">{post.title}</CardTitle>
+                    <CardDescription>{post.category} · {post.read_time}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditPostDialog(post)}
+                        className="flex-1"
+                      >
+                        <Icon name="Edit" size={16} className="mr-1" />
+                        Изменить
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeletePost(post.id)}
+                        className="flex-1"
+                      >
+                        <Icon name="Trash2" size={16} className="mr-1" />
+                        Удалить
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {blogPosts.length === 0 && (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Icon name="FileText" size={48} className="mb-4 text-muted-foreground" />
+                  <p className="text-lg text-muted-foreground mb-4">
+                    Постов пока нет
+                  </p>
+                  <Button onClick={openCreatePostDialog}>
+                    <Icon name="Plus" size={20} className="mr-2" />
+                    Добавить первый пост
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
+  );
+}
+
+function BlogPostForm({
+  post,
+  onSave,
+  onCancel,
+}: {
+  post: BlogPost | null;
+  onSave: (formData: FormData) => void;
+  onCancel: () => void;
+}) {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="post-title">Заголовок</Label>
+        <Input
+          id="post-title"
+          name="title"
+          defaultValue={post?.title}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="slug">Slug (URL)</Label>
+        <Input
+          id="slug"
+          name="slug"
+          defaultValue={post?.slug}
+          placeholder="primer-slug-posta"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="post-category">Категория</Label>
+        <Select name="category" defaultValue={post?.category || 'Меню'}>
+          <SelectTrigger>
+            <SelectValue placeholder="Выберите категорию" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Меню">Меню</SelectItem>
+            <SelectItem value="Папки">Папки</SelectItem>
+            <SelectItem value="Корочки">Корочки</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="excerpt">Краткое описание</Label>
+        <Textarea
+          id="excerpt"
+          name="excerpt"
+          defaultValue={post?.excerpt}
+          rows={2}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="content">Содержание (HTML)</Label>
+        <Textarea
+          id="content"
+          name="content"
+          defaultValue={post?.content}
+          rows={8}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="post-image">URL изображения</Label>
+        <Input
+          id="post-image"
+          name="image"
+          type="url"
+          defaultValue={post?.image}
+          placeholder="https://..."
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="read-time">Время чтения</Label>
+        <Input
+          id="read-time"
+          name="read_time"
+          defaultValue={post?.read_time || '5 мин'}
+          placeholder="5 мин"
+          required
+        />
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button type="submit" className="flex-1">
+          Сохранить
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+          Отмена
+        </Button>
+      </div>
+    </form>
   );
 }
 

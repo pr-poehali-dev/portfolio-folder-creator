@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,21 +7,41 @@ import { Input } from '@/components/ui/input';
 import Icon from '@/components/ui/icon';
 
 interface BlogPost {
-  id: string;
+  id: number;
   title: string;
   excerpt: string;
   category: string;
-  date: string;
-  readTime: string;
+  created_at: string;
+  read_time: string;
   image: string;
   slug: string;
 }
 
+const BLOG_API = 'https://functions.poehali.dev/03d15e5b-27a3-4806-861b-3ecb95d625bd';
+
 const Blog = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const blogPosts: BlogPost[] = [
+  useEffect(() => {
+    loadBlogPosts();
+  }, []);
+
+  const loadBlogPosts = async () => {
+    try {
+      const response = await fetch(BLOG_API);
+      const data = await response.json();
+      setBlogPosts(data);
+    } catch (err) {
+      console.error('Ошибка загрузки постов:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const blogPostsOld: BlogPost[] = [
     {
       id: '1',
       slug: 'kak-vybrat-papku-dlya-menu',
@@ -98,6 +118,20 @@ const Blog = () => {
     const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Загрузка...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
@@ -194,11 +228,11 @@ const Blog = () => {
                     <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
                       <span className="flex items-center gap-1">
                         <Icon name="Calendar" size={14} />
-                        {post.date}
+                        {formatDate(post.created_at)}
                       </span>
                       <span className="flex items-center gap-1">
                         <Icon name="Clock" size={14} />
-                        {post.readTime}
+                        {post.read_time}
                       </span>
                     </div>
                     <CardTitle className="text-lg leading-tight group-hover:text-amber-600 transition-colors">
