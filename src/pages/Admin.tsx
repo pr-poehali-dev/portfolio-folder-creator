@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +16,9 @@ const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
+  const [authToken, setAuthToken] = useState('');
 
   const [blogPost, setBlogPost] = useState({
     title: '',
@@ -39,18 +41,52 @@ const Admin = () => {
     image: '/img/8ffb4be5-fdbf-42eb-bc68-0cf711115a50.jpg'
   });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === 'admin2024') {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    const savedUsername = localStorage.getItem('admin_username');
+    if (token && savedUsername) {
+      setAuthToken(token);
+      setUsername(savedUsername);
       setIsAuthenticated(true);
-      toast({
-        title: "Вход выполнен",
-        description: "Добро пожаловать в админ-панель",
+    }
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/c59fe49a-4cc0-43df-b6b4-3c6b8e55326e', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', username, password })
       });
-    } else {
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setAuthToken(data.token);
+        setIsAuthenticated(true);
+        localStorage.setItem('admin_token', data.token);
+        localStorage.setItem('admin_username', username);
+        toast({
+          title: "Вход выполнен",
+          description: "Добро пожаловать в админ-панель",
+        });
+      } else {
+        toast({
+          title: "Ошибка входа",
+          description: data.error || "Неверные данные",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Ошибка входа",
-        description: "Неверный пароль",
+        title: "Ошибка подключения",
+        description: "Не удалось подключиться к серверу",
         variant: "destructive"
       });
     }
@@ -177,6 +213,9 @@ const Admin = () => {
                 size="sm"
                 onClick={() => {
                   setIsAuthenticated(false);
+                  setAuthToken('');
+                  localStorage.removeItem('admin_token');
+                  localStorage.removeItem('admin_username');
                   toast({
                     title: "Выход выполнен",
                     description: "Вы вышли из админ-панели",
@@ -199,7 +238,7 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="blog" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-3 max-w-2xl">
               <TabsTrigger value="blog" className="flex items-center gap-2">
                 <Icon name="Newspaper" size={16} />
                 Блог
@@ -207,6 +246,10 @@ const Admin = () => {
               <TabsTrigger value="products" className="flex items-center gap-2">
                 <Icon name="Package" size={16} />
                 Товары
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Icon name="Settings" size={16} />
+                Настройки
               </TabsTrigger>
             </TabsList>
 
@@ -432,6 +475,149 @@ const Admin = () => {
                       <Icon name="Eye" size={16} className="mr-2" />
                       Посмотреть сайт
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Настройки администратора</CardTitle>
+                  <CardDescription>Изменение пароля и других параметров</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Icon name="Key" size={20} />
+                      Смена пароля
+                    </h3>
+                    <div>
+                      <Label htmlFor="newPassword">Новый пароль</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Введите новый пароль"
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="confirmPassword">Подтвердите пароль</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Повторите новый пароль"
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="currentPassword">Текущий пароль</Label>
+                      <Input
+                        id="currentPassword"
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Введите текущий пароль"
+                        className="mt-2"
+                      />
+                    </div>
+                    <Button 
+                      onClick={async () => {
+                        if (!currentPassword || !newPassword || !confirmPassword) {
+                          toast({
+                            title: "Ошибка",
+                            description: "Заполните все поля",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        if (newPassword !== confirmPassword) {
+                          toast({
+                            title: "Ошибка",
+                            description: "Пароли не совпадают",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        if (newPassword.length < 6) {
+                          toast({
+                            title: "Ошибка",
+                            description: "Пароль должен быть не менее 6 символов",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
+                        try {
+                          const response = await fetch('https://functions.poehali.dev/c59fe49a-4cc0-43df-b6b4-3c6b8e55326e', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              action: 'change_password',
+                              username,
+                              old_password: currentPassword,
+                              new_password: newPassword
+                            })
+                          });
+                          
+                          const data = await response.json();
+                          
+                          if (data.success) {
+                            toast({
+                              title: "Пароль изменен",
+                              description: "Новый пароль успешно сохранен",
+                            });
+                            setCurrentPassword('');
+                            setNewPassword('');
+                            setConfirmPassword('');
+                          } else {
+                            toast({
+                              title: "Ошибка",
+                              description: data.error || "Не удалось изменить пароль",
+                              variant: "destructive"
+                            });
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Ошибка подключения",
+                            description: "Не удалось подключиться к серверу",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
+                      className="bg-gradient-to-r from-amber-500 to-orange-600"
+                    >
+                      <Icon name="Check" size={16} className="mr-2" />
+                      Сохранить пароль
+                    </Button>
+                  </div>
+
+                  <div className="border-t pt-6 space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Icon name="User" size={20} />
+                      Информация об аккаунте
+                    </h3>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-600">Пользователь:</span>
+                        <span className="font-medium">{username}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-600">Статус:</span>
+                        <Badge variant="outline" className="text-green-600 border-green-300">
+                          <Icon name="CheckCircle" size={12} className="mr-1" />
+                          Активен
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between py-2">
+                        <span className="text-gray-600">Роль:</span>
+                        <span className="font-medium">Администратор</span>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

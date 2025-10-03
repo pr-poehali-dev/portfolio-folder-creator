@@ -1,15 +1,15 @@
 {
   "tests": [
     {
-      "name": "Register new admin",
+      "name": "Login admin",
       "method": "POST",
       "path": "/",
       "body": {
-        "action": "register",
+        "action": "login",
         "username": "admin",
-        "password": "test123"
+        "password": "admin"
       },
-      "expectedStatus": 201,
+      "expectedStatus": 200,
       "expectedBody": {
         "success": true,
         "token": "string"
@@ -17,18 +17,19 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Login admin",
+      "name": "Change password",
       "method": "POST",
       "path": "/",
       "body": {
-        "action": "login",
+        "action": "change_password",
         "username": "admin",
-        "password": "test123"
+        "old_password": "admin",
+        "new_password": "newpass123"
       },
       "expectedStatus": 200,
       "expectedBody": {
         "success": true,
-        "token": "string"
+        "message": "string"
       },
       "bodyMatcher": "partial"
     }

@@ -56,6 +56,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             return handle_register(body_data, conn)
         elif action == 'login':
             return handle_login(body_data, conn)
+        elif action == 'change_password':
+            return handle_change_password(body_data, conn)
         else:
             return {
                 'statusCode': 400,
@@ -175,5 +177,56 @@ def handle_login(body_data: Dict[str, Any], conn) -> Dict[str, Any]:
             'token': token,
             'admin': admin_dict
         }),
+        'isBase64Encoded': False
+    }
+
+
+def handle_change_password(body_data: Dict[str, Any], conn) -> Dict[str, Any]:
+    username = body_data.get('username')
+    old_password = body_data.get('old_password')
+    new_password = body_data.get('new_password')
+    
+    if not username or not old_password or not new_password:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Username, old password and new password required'}),
+            'isBase64Encoded': False
+        }
+    
+    old_password_hash = hash_password(old_password)
+    
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute('''
+        SELECT id FROM admins 
+        WHERE username = %s AND password_hash = %s
+    ''', (username, old_password_hash))
+    
+    admin = cursor.fetchone()
+    
+    if not admin:
+        cursor.close()
+        return {
+            'statusCode': 401,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Invalid credentials'}),
+            'isBase64Encoded': False
+        }
+    
+    new_password_hash = hash_password(new_password)
+    
+    cursor.execute('''
+        UPDATE admins 
+        SET password_hash = %s
+        WHERE username = %s
+    ''', (new_password_hash, username))
+    
+    conn.commit()
+    cursor.close()
+    
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'success': True, 'message': 'Password changed successfully'}),
         'isBase64Encoded': False
     }
