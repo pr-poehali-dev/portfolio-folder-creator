@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,40 +16,74 @@ const Calculator = () => {
   const [quantity, setQuantity] = useState(50);
   const [branding, setBranding] = useState('none');
   const [logoSize, setLogoSize] = useState('small');
+  const [pricesData, setPricesData] = useState<any>(null);
 
-  const prices = {
-    menu: {
-      'eco-leather': { base: 800, a4: 0, a5: -200 },
-      'natural-leather': { base: 2200, a4: 0, a5: -300 },
-      'baladek': { base: 600, a4: 0, a5: -150 }
-    },
-    folder: {
-      'eco-leather': { base: 700, a4: 0, a5: -150 },
-      'natural-leather': { base: 2000, a4: 0, a5: -250 },
-      'baladek': { base: 500, a4: 0, a5: -100 }
-    },
-    cover: {
-      'eco-leather': { base: 900, a4: 0, a5: -200 },
-      'natural-leather': { base: 2500, a4: 0, a5: -400 },
-      'baladek': { base: 700, a4: 0, a5: -150 }
+  useEffect(() => {
+    fetch('https://functions.poehali.dev/ce1d4913-184d-4416-987f-84853ba4a6ee')
+      .then(res => res.json())
+      .then(data => setPricesData(data))
+      .catch(console.error);
+  }, []);
+
+  const getPricesFromData = () => {
+    if (!pricesData) {
+      return {
+        menu: {
+          'eco-leather': { base: 800, a4: 0, a5: -200 },
+          'natural-leather': { base: 2200, a4: 0, a5: -300 },
+          'baladek': { base: 600, a4: 0, a5: -150 }
+        },
+        folder: {
+          'eco-leather': { base: 700, a4: 0, a5: -150 },
+          'natural-leather': { base: 2000, a4: 0, a5: -250 },
+          'baladek': { base: 500, a4: 0, a5: -100 }
+        },
+        cover: {
+          'eco-leather': { base: 900, a4: 0, a5: -200 },
+          'natural-leather': { base: 2500, a4: 0, a5: -400 },
+          'baladek': { base: 700, a4: 0, a5: -150 }
+        }
+      };
     }
+
+    const result: any = { menu: {}, folder: {}, cover: {} };
+    pricesData.calculator_prices?.forEach((item: any) => {
+      result[item.product_type][item.material] = {
+        base: item.base_price,
+        a4: item.a4_modifier,
+        a5: item.a5_modifier
+      };
+    });
+    return result;
   };
 
-  const brandingPrices = {
-    none: 0,
-    print: 150,
-    foil: 400,
-    embossing: 350,
-    laser: 500
+  const getBrandingPrices = () => {
+    if (!pricesData) {
+      return { none: 0, print: 150, foil: 400, embossing: 350, laser: 500 };
+    }
+    const result: any = {};
+    pricesData.branding_prices?.forEach((item: any) => {
+      result[item.branding_type] = item.price;
+    });
+    return result;
   };
 
-  const logoSizePrices = {
-    small: 0,
-    medium: 100,
-    large: 200
+  const getLogoSizePrices = () => {
+    if (!pricesData) {
+      return { small: 0, medium: 100, large: 200 };
+    }
+    const result: any = {};
+    pricesData.logo_size_prices?.forEach((item: any) => {
+      result[item.size_type] = item.price;
+    });
+    return result;
   };
 
   const calculatePrice = () => {
+    const prices = getPricesFromData();
+    const brandingPrices = getBrandingPrices();
+    const logoSizePrices = getLogoSizePrices();
+    
     const basePrice = prices[productType as keyof typeof prices][material as keyof typeof prices.menu].base;
     const sizeModifier = prices[productType as keyof typeof prices][material as keyof typeof prices.menu][size as 'a4' | 'a5'];
     const brandingCost = brandingPrices[branding as keyof typeof brandingPrices];

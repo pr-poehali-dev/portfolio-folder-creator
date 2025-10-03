@@ -45,6 +45,9 @@ const Admin = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const [prices, setPrices] = useState<any>(null);
+  const [editingPrice, setEditingPrice] = useState<any>(null);
+
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     const savedUsername = localStorage.getItem('admin_username');
@@ -52,8 +55,56 @@ const Admin = () => {
       setAuthToken(token);
       setUsername(savedUsername);
       setIsAuthenticated(true);
+      loadPrices();
     }
   }, []);
+
+  const loadPrices = async () => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/ce1d4913-184d-4416-987f-84853ba4a6ee');
+      const data = await response.json();
+      setPrices(data);
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить цены",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updatePrice = async (priceData: any) => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/ce1d4913-184d-4416-987f-84853ba4a6ee', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(priceData)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Цена обновлена",
+          description: "Изменения сохранены",
+        });
+        loadPrices();
+        setEditingPrice(null);
+      } else {
+        toast({
+          title: "Ошибка",
+          description: data.error || "Не удалось обновить цену",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка подключения",
+        description: "Не удалось обновить цену",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,7 +289,7 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="blog" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="blog" className="flex items-center gap-2">
                 <Icon name="Newspaper" size={16} />
                 Блог
@@ -246,6 +297,10 @@ const Admin = () => {
               <TabsTrigger value="products" className="flex items-center gap-2">
                 <Icon name="Package" size={16} />
                 Товары
+              </TabsTrigger>
+              <TabsTrigger value="prices" className="flex items-center gap-2">
+                <Icon name="DollarSign" size={16} />
+                Цены
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-2">
                 <Icon name="Settings" size={16} />
@@ -478,6 +533,196 @@ const Admin = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="prices">
+              {!prices ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Icon name="Loader2" size={32} className="mx-auto animate-spin text-gray-400" />
+                    <p className="text-gray-500 mt-4">Загрузка цен...</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Цены на продукцию</CardTitle>
+                      <CardDescription>Базовые цены и модификаторы размеров</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {prices.calculator_prices?.map((item: any) => (
+                          <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                            <div className="flex-1">
+                              <div className="font-semibold capitalize">
+                                {item.product_type === 'menu' ? 'Меню' : item.product_type === 'folder' ? 'Папка' : 'Корочки'} - {item.material === 'eco-leather' ? 'Эко-кожа' : item.material === 'natural-leather' ? 'Натуральная кожа' : 'Баладек'}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                Базовая: {item.base_price} ₽ | A4: {item.a4_modifier >= 0 ? '+' : ''}{item.a4_modifier} ₽ | A5: {item.a5_modifier >= 0 ? '+' : ''}{item.a5_modifier} ₽
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setEditingPrice({ ...item, type: 'calculator' })}
+                            >
+                              <Icon name="Edit" size={14} className="mr-1" />
+                              Изменить
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Цены на брендирование</CardTitle>
+                      <CardDescription>Стоимость нанесения логотипа</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {prices.branding_prices?.map((item: any) => (
+                          <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                            <div className="flex-1">
+                              <div className="font-semibold capitalize">
+                                {item.branding_type === 'none' ? 'Без логотипа' : item.branding_type === 'print' ? 'Печать' : item.branding_type === 'foil' ? 'Тиснение фольгой' : item.branding_type === 'embossing' ? 'Слепое тиснение' : 'Лазерная гравировка'}
+                              </div>
+                              <div className="text-sm text-gray-600">{item.price} ₽</div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setEditingPrice({ ...item, type: 'branding' })}
+                            >
+                              <Icon name="Edit" size={14} className="mr-1" />
+                              Изменить
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Цены за размер логотипа</CardTitle>
+                      <CardDescription>Доплата за увеличенный размер</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {prices.logo_size_prices?.map((item: any) => (
+                          <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                            <div className="flex-1">
+                              <div className="font-semibold capitalize">
+                                {item.size_type === 'small' ? 'Малый' : item.size_type === 'medium' ? 'Средний' : 'Большой'}
+                              </div>
+                              <div className="text-sm text-gray-600">{item.price} ₽</div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setEditingPrice({ ...item, type: 'logo' })}
+                            >
+                              <Icon name="Edit" size={14} className="mr-1" />
+                              Изменить
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {editingPrice && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setEditingPrice(null)}>
+                  <Card className="w-full max-w-md m-4" onClick={(e) => e.stopPropagation()}>
+                    <CardHeader>
+                      <CardTitle>Редактирование цены</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {editingPrice.type === 'calculator' ? (
+                        <>
+                          <div>
+                            <Label>Базовая цена (₽)</Label>
+                            <Input
+                              type="number"
+                              value={editingPrice.base_price}
+                              onChange={(e) => setEditingPrice({...editingPrice, base_price: Number(e.target.value)})}
+                              className="mt-2"
+                            />
+                          </div>
+                          <div>
+                            <Label>Модификатор A4 (₽)</Label>
+                            <Input
+                              type="number"
+                              value={editingPrice.a4_modifier}
+                              onChange={(e) => setEditingPrice({...editingPrice, a4_modifier: Number(e.target.value)})}
+                              className="mt-2"
+                            />
+                          </div>
+                          <div>
+                            <Label>Модификатор A5 (₽)</Label>
+                            <Input
+                              type="number"
+                              value={editingPrice.a5_modifier}
+                              onChange={(e) => setEditingPrice({...editingPrice, a5_modifier: Number(e.target.value)})}
+                              className="mt-2"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <Label>Цена (₽)</Label>
+                          <Input
+                            type="number"
+                            value={editingPrice.price}
+                            onChange={(e) => setEditingPrice({...editingPrice, price: Number(e.target.value)})}
+                            className="mt-2"
+                          />
+                        </div>
+                      )}
+                      <div className="flex gap-3">
+                        <Button 
+                          onClick={() => {
+                            if (editingPrice.type === 'calculator') {
+                              updatePrice({
+                                type: 'calculator',
+                                product_type: editingPrice.product_type,
+                                material: editingPrice.material,
+                                base_price: editingPrice.base_price,
+                                a4_modifier: editingPrice.a4_modifier,
+                                a5_modifier: editingPrice.a5_modifier
+                              });
+                            } else if (editingPrice.type === 'branding') {
+                              updatePrice({
+                                type: 'branding',
+                                branding_type: editingPrice.branding_type,
+                                price: editingPrice.price
+                              });
+                            } else {
+                              updatePrice({
+                                type: 'logo',
+                                size_type: editingPrice.size_type,
+                                price: editingPrice.price
+                              });
+                            }
+                          }}
+                          className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600"
+                        >
+                          <Icon name="Check" size={16} className="mr-2" />
+                          Сохранить
+                        </Button>
+                        <Button variant="outline" onClick={() => setEditingPrice(null)} className="flex-1">
+                          Отмена
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="settings">
