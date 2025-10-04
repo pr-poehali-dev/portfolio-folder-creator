@@ -289,7 +289,7 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="blog" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-4 gap-2">
               <TabsTrigger value="blog" className="flex items-center gap-2">
                 <Icon name="Newspaper" size={16} />
                 Блог
