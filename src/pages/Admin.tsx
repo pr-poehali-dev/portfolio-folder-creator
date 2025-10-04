@@ -285,7 +285,7 @@ const Admin = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-2">Управление контентом</h1>
-            <p className="text-gray-600">Добавляйте новые статьи и товары</p>
+            <p className="text-gray-600">Управление сайтом</p>
           </div>
 
           <Tabs defaultValue="blog" className="space-y-6">
