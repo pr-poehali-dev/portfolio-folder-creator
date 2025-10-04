@@ -12,6 +12,8 @@ import Icon from '@/components/ui/icon';
 
 const PRODUCTS_API = 'https://functions.poehali.dev/65b050bc-83c5-4cd4-abc4-6d565bbe765e';
 const BLOG_API = 'https://functions.poehali.dev/03d15e5b-27a3-4806-861b-3ecb95d625bd';
+const PRICES_API = 'https://functions.poehali.dev/ce1d4913-184d-4416-987f-84853ba4a6ee';
+const AUTH_API = 'https://functions.poehali.dev/c59fe49a-4cc0-43df-b6b4-3c6b8e55326e';
 
 interface Product {
   id: number;
@@ -45,6 +47,11 @@ export default function AdminPanel() {
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
+  const [prices, setPrices] = useState<any>(null);
+  const [editingPrice, setEditingPrice] = useState<any>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,7 +62,67 @@ export default function AdminPanel() {
     }
     loadProducts();
     loadBlogPosts();
+    loadPrices();
   }, [navigate]);
+
+  const loadPrices = async () => {
+    try {
+      const response = await fetch(PRICES_API);
+      const data = await response.json();
+      setPrices(data);
+    } catch (err) {
+      console.error('Ошибка загрузки цен:', err);
+    }
+  };
+
+  const updatePrice = async (priceData: any) => {
+    try {
+      const response = await fetch(PRICES_API, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(priceData)
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadPrices();
+        setEditingPrice(null);
+        alert('Цена обновлена');
+      }
+    } catch (err) {
+      console.error('Ошибка обновления цены:', err);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      alert('Пароли не совпадают');
+      return;
+    }
+    try {
+      const username = localStorage.getItem('adminUser');
+      const response = await fetch(AUTH_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'change_password',
+          username,
+          old_password: currentPassword,
+          new_password: newPassword
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('Пароль успешно изменён');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        alert('Ошибка: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Ошибка смены пароля:', err);
+    }
+  };
 
   const loadProducts = async () => {
     try {
@@ -228,9 +295,11 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="products">Товары</TabsTrigger>
             <TabsTrigger value="blog">Блог</TabsTrigger>
+            <TabsTrigger value="prices">Цены</TabsTrigger>
+            <TabsTrigger value="settings">Настройки</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="mt-6">
@@ -401,6 +470,229 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="prices" className="mt-6">
+            {!prices ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Icon name="Loader2" size={32} className="mx-auto animate-spin text-muted-foreground" />
+                  <p className="text-lg text-muted-foreground mt-4">Загрузка цен...</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Цены на продукцию</CardTitle>
+                    <CardDescription>Базовые цены и модификаторы размеров</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {prices.calculator_prices?.map((item: any) => (
+                        <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="font-semibold">
+                              {item.product_type === 'menu' ? 'Меню' : item.product_type === 'folder' ? 'Папка' : 'Корочки'} - {item.material === 'eco-leather' ? 'Эко-кожа' : item.material === 'natural-leather' ? 'Натуральная кожа' : 'Баладек'}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Базовая: {item.base_price} ₽ | A4: {item.a4_modifier >= 0 ? '+' : ''}{item.a4_modifier} ₽ | A5: {item.a5_modifier >= 0 ? '+' : ''}{item.a5_modifier} ₽
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => setEditingPrice({ ...item, type: 'calculator' })}>
+                            <Icon name="Edit" size={14} className="mr-1" />
+                            Изменить
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Цены на брендирование</CardTitle>
+                    <CardDescription>Стоимость нанесения логотипа</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {prices.branding_prices?.map((item: any) => (
+                        <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="font-semibold">
+                              {item.branding_type === 'none' ? 'Без логотипа' : item.branding_type === 'print' ? 'Печать' : item.branding_type === 'foil' ? 'Тиснение фольгой' : item.branding_type === 'embossing' ? 'Слепое тиснение' : 'Лазерная гравировка'}
+                            </div>
+                            <div className="text-sm text-muted-foreground">{item.price} ₽</div>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => setEditingPrice({ ...item, type: 'branding' })}>
+                            <Icon name="Edit" size={14} className="mr-1" />
+                            Изменить
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Цены за размер логотипа</CardTitle>
+                    <CardDescription>Доплата за увеличенный размер</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {prices.logo_size_prices?.map((item: any) => (
+                        <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="font-semibold">
+                              {item.size_type === 'small' ? 'Малый' : item.size_type === 'medium' ? 'Средний' : 'Большой'}
+                            </div>
+                            <div className="text-sm text-muted-foreground">{item.price} ₽</div>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => setEditingPrice({ ...item, type: 'logo' })}>
+                            <Icon name="Edit" size={14} className="mr-1" />
+                            Изменить
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {editingPrice && (
+              <Dialog open={!!editingPrice} onOpenChange={() => setEditingPrice(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Редактирование цены</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {editingPrice.type === 'calculator' ? (
+                      <>
+                        <div>
+                          <Label>Базовая цена (₽)</Label>
+                          <Input
+                            type="number"
+                            value={editingPrice.base_price}
+                            onChange={(e) => setEditingPrice({...editingPrice, base_price: Number(e.target.value)})}
+                            className="mt-2"
+                          />
+                        </div>
+                        <div>
+                          <Label>Модификатор A4 (₽)</Label>
+                          <Input
+                            type="number"
+                            value={editingPrice.a4_modifier}
+                            onChange={(e) => setEditingPrice({...editingPrice, a4_modifier: Number(e.target.value)})}
+                            className="mt-2"
+                          />
+                        </div>
+                        <div>
+                          <Label>Модификатор A5 (₽)</Label>
+                          <Input
+                            type="number"
+                            value={editingPrice.a5_modifier}
+                            onChange={(e) => setEditingPrice({...editingPrice, a5_modifier: Number(e.target.value)})}
+                            className="mt-2"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div>
+                        <Label>Цена (₽)</Label>
+                        <Input
+                          type="number"
+                          value={editingPrice.price}
+                          onChange={(e) => setEditingPrice({...editingPrice, price: Number(e.target.value)})}
+                          className="mt-2"
+                        />
+                      </div>
+                    )}
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => {
+                          if (editingPrice.type === 'calculator') {
+                            updatePrice({
+                              type: 'calculator',
+                              product_type: editingPrice.product_type,
+                              material: editingPrice.material,
+                              base_price: editingPrice.base_price,
+                              a4_modifier: editingPrice.a4_modifier,
+                              a5_modifier: editingPrice.a5_modifier
+                            });
+                          } else if (editingPrice.type === 'branding') {
+                            updatePrice({
+                              type: 'branding',
+                              branding_type: editingPrice.branding_type,
+                              price: editingPrice.price
+                            });
+                          } else {
+                            updatePrice({
+                              type: 'logo',
+                              size_type: editingPrice.size_type,
+                              price: editingPrice.price
+                            });
+                          }
+                        }}
+                        className="flex-1"
+                      >
+                        <Icon name="Check" size={16} className="mr-2" />
+                        Сохранить
+                      </Button>
+                      <Button variant="outline" onClick={() => setEditingPrice(null)} className="flex-1">
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Смена пароля</CardTitle>
+                <CardDescription>Измените пароль для доступа к админ-панели</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Текущий пароль</Label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Введите текущий пароль"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Новый пароль</Label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Введите новый пароль"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Подтверждение пароля</Label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Повторите новый пароль"
+                    className="mt-2"
+                  />
+                </div>
+                <Button onClick={handleChangePassword} className="w-full">
+                  <Icon name="Lock" size={16} className="mr-2" />
+                  Изменить пароль
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
