@@ -186,6 +186,8 @@ def handle_change_password(body_data: Dict[str, Any], conn) -> Dict[str, Any]:
     old_password = body_data.get('old_password')
     new_password = body_data.get('new_password')
     
+    print(f"DEBUG: username={username}, has_old_pwd={bool(old_password)}, has_new_pwd={bool(new_password)}")
+    
     if not username or not old_password or not new_password:
         return {
             'statusCode': 400,
@@ -195,17 +197,31 @@ def handle_change_password(body_data: Dict[str, Any], conn) -> Dict[str, Any]:
         }
     
     old_password_hash = hash_password(old_password)
+    print(f"DEBUG: old_password_hash={old_password_hash[:20]}...")
     
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute('''
-        SELECT id FROM admins 
-        WHERE username = %s AND password_hash = %s
-    ''', (username, old_password_hash))
+        SELECT id, password_hash FROM admins 
+        WHERE username = %s
+    ''', (username,))
     
     admin = cursor.fetchone()
     
     if not admin:
         cursor.close()
+        print(f"DEBUG: User {username} not found")
+        return {
+            'statusCode': 401,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Invalid credentials'}),
+            'isBase64Encoded': False
+        }
+    
+    print(f"DEBUG: DB hash={admin['password_hash'][:20]}..., provided hash={old_password_hash[:20]}...")
+    
+    if admin['password_hash'] != old_password_hash:
+        cursor.close()
+        print(f"DEBUG: Password mismatch for user {username}")
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
