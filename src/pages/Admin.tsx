@@ -19,6 +19,8 @@ const Admin = () => {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [authToken, setAuthToken] = useState('');
+  
+  console.log('Admin component loaded - VERSION 2.0');
 
   const [blogPost, setBlogPost] = useState({
     title: '',
