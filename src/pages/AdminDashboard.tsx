@@ -46,6 +46,12 @@ export default function AdminDashboard() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isAddingBlog, setIsAddingBlog] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,6 +62,10 @@ export default function AdminDashboard() {
     }
     if (activeTab === 'prices') {
       loadPrices();
+    } else if (activeTab === 'products') {
+      loadProducts();
+    } else if (activeTab === 'blog') {
+      loadBlogPosts();
     }
   }, [navigate, activeTab]);
 
@@ -66,6 +76,94 @@ export default function AdminDashboard() {
       setPrices(data);
     } catch (err) {
       console.error('Ошибка загрузки цен:', err);
+    }
+  };
+
+  const loadProducts = async () => {
+    try {
+      const response = await fetch(PRODUCTS_API);
+      const data = await response.json();
+      setProducts(data);
+    } catch (err) {
+      console.error('Ошибка загрузки товаров:', err);
+    }
+  };
+
+  const loadBlogPosts = async () => {
+    try {
+      const response = await fetch(BLOG_API);
+      const data = await response.json();
+      setBlogPosts(data);
+    } catch (err) {
+      console.error('Ошибка загрузки постов:', err);
+    }
+  };
+
+  const deleteProduct = async (id: number) => {
+    if (!confirm('Удалить товар?')) return;
+    try {
+      const response = await fetch(`${PRODUCTS_API}?id=${id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (data.success) {
+        loadProducts();
+        alert('Товар удалён');
+      }
+    } catch (err) {
+      console.error('Ошибка удаления товара:', err);
+    }
+  };
+
+  const deleteBlogPost = async (id: number) => {
+    if (!confirm('Удалить пост?')) return;
+    try {
+      const response = await fetch(`${BLOG_API}?id=${id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (data.success) {
+        loadBlogPosts();
+        alert('Пост удалён');
+      }
+    } catch (err) {
+      console.error('Ошибка удаления поста:', err);
+    }
+  };
+
+  const saveProduct = async (product: Product) => {
+    try {
+      const method = product.id ? 'PUT' : 'POST';
+      const response = await fetch(PRODUCTS_API, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product)
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadProducts();
+        setEditingProduct(null);
+        setIsAddingProduct(false);
+        alert(product.id ? 'Товар обновлён' : 'Товар добавлен');
+      }
+    } catch (err) {
+      console.error('Ошибка сохранения товара:', err);
+    }
+  };
+
+  const saveBlogPost = async (post: BlogPost) => {
+    try {
+      const method = post.id ? 'PUT' : 'POST';
+      const response = await fetch(BLOG_API, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(post)
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadBlogPosts();
+        setEditingBlog(null);
+        setIsAddingBlog(false);
+        alert(post.id ? 'Пост обновлён' : 'Пост добавлен');
+      }
+    } catch (err) {
+      console.error('Ошибка сохранения поста:', err);
     }
   };
 
@@ -161,19 +259,292 @@ export default function AdminDashboard() {
           <TabsContent value="products">
             <Card>
               <CardHeader>
-                <CardTitle>Управление товарами</CardTitle>
-                <CardDescription>Здесь будет управление товарами (используйте старую админку /old-admin)</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Управление товарами</CardTitle>
+                    <CardDescription>Добавление и редактирование товаров в каталоге</CardDescription>
+                  </div>
+                  <Button onClick={() => {
+                    setEditingProduct({
+                      id: 0,
+                      title: '',
+                      category: 'menu',
+                      price: '',
+                      image: '',
+                      description: '',
+                      features: [],
+                      materials: [],
+                      sizes: []
+                    });
+                    setIsAddingProduct(true);
+                  }}>
+                    <Icon name="Plus" size={16} className="mr-2" />
+                    Добавить товар
+                  </Button>
+                </div>
               </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {products.map((product) => (
+                    <div key={product.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex gap-4 flex-1">
+                        {product.image && (
+                          <img src={product.image} alt={product.title} className="w-20 h-20 object-cover rounded" />
+                        )}
+                        <div className="flex-1">
+                          <div className="font-semibold text-lg">{product.title}</div>
+                          <div className="text-sm text-muted-foreground">{product.category === 'menu' ? 'Меню' : product.category === 'folder' ? 'Папка' : 'Корочки'} • {product.price}</div>
+                          <div className="text-sm mt-1">{product.description}</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setEditingProduct(product)}>
+                          <Icon name="Edit" size={14} />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => deleteProduct(product.id)}>
+                          <Icon name="Trash2" size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
             </Card>
+
+            {editingProduct && (
+              <Dialog open={!!editingProduct} onOpenChange={() => { setEditingProduct(null); setIsAddingProduct(false); }}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{isAddingProduct ? 'Добавить товар' : 'Редактировать товар'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Название</Label>
+                      <Input
+                        value={editingProduct.title}
+                        onChange={(e) => setEditingProduct({...editingProduct, title: e.target.value})}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label>Категория</Label>
+                      <Select value={editingProduct.category} onValueChange={(v) => setEditingProduct({...editingProduct, category: v})}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="menu">Меню</SelectItem>
+                          <SelectItem value="folder">Папка</SelectItem>
+                          <SelectItem value="covers">Корочки</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Цена</Label>
+                      <Input
+                        value={editingProduct.price}
+                        onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value})}
+                        placeholder="от 500 ₽"
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label>Изображение (URL)</Label>
+                      <Input
+                        value={editingProduct.image}
+                        onChange={(e) => setEditingProduct({...editingProduct, image: e.target.value})}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label>Описание</Label>
+                      <Textarea
+                        value={editingProduct.description}
+                        onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})}
+                        className="mt-2"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label>Особенности (через запятую)</Label>
+                      <Textarea
+                        value={editingProduct.features.join(', ')}
+                        onChange={(e) => setEditingProduct({...editingProduct, features: e.target.value.split(',').map(s => s.trim())})}
+                        className="mt-2"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <Label>Материалы (через запятую)</Label>
+                      <Input
+                        value={editingProduct.materials.join(', ')}
+                        onChange={(e) => setEditingProduct({...editingProduct, materials: e.target.value.split(',').map(s => s.trim())})}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label>Размеры (через запятую)</Label>
+                      <Input
+                        value={editingProduct.sizes.join(', ')}
+                        onChange={(e) => setEditingProduct({...editingProduct, sizes: e.target.value.split(',').map(s => s.trim())})}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <Button onClick={() => saveProduct(editingProduct)} className="flex-1">
+                        <Icon name="Check" size={16} className="mr-2" />
+                        Сохранить
+                      </Button>
+                      <Button variant="outline" onClick={() => { setEditingProduct(null); setIsAddingProduct(false); }} className="flex-1">
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </TabsContent>
 
           <TabsContent value="blog">
             <Card>
               <CardHeader>
-                <CardTitle>Управление блогом</CardTitle>
-                <CardDescription>Здесь будет управление блогом (используйте старую админку /old-admin)</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Управление блогом</CardTitle>
+                    <CardDescription>Добавление и редактирование статей</CardDescription>
+                  </div>
+                  <Button onClick={() => {
+                    setEditingBlog({
+                      id: 0,
+                      title: '',
+                      slug: '',
+                      excerpt: '',
+                      content: '',
+                      category: 'production',
+                      image: '',
+                      read_time: '5 мин'
+                    });
+                    setIsAddingBlog(true);
+                  }}>
+                    <Icon name="Plus" size={16} className="mr-2" />
+                    Добавить статью
+                  </Button>
+                </div>
               </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {blogPosts.map((post) => (
+                    <div key={post.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex gap-4 flex-1">
+                        {post.image && (
+                          <img src={post.image} alt={post.title} className="w-20 h-20 object-cover rounded" />
+                        )}
+                        <div className="flex-1">
+                          <div className="font-semibold text-lg">{post.title}</div>
+                          <div className="text-sm text-muted-foreground">{post.category} • {post.read_time}</div>
+                          <div className="text-sm mt-1">{post.excerpt}</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setEditingBlog(post)}>
+                          <Icon name="Edit" size={14} />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => deleteBlogPost(post.id)}>
+                          <Icon name="Trash2" size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
             </Card>
+
+            {editingBlog && (
+              <Dialog open={!!editingBlog} onOpenChange={() => { setEditingBlog(null); setIsAddingBlog(false); }}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{isAddingBlog ? 'Добавить статью' : 'Редактировать статью'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Заголовок</Label>
+                      <Input
+                        value={editingBlog.title}
+                        onChange={(e) => setEditingBlog({...editingBlog, title: e.target.value})}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label>Slug (URL)</Label>
+                      <Input
+                        value={editingBlog.slug}
+                        onChange={(e) => setEditingBlog({...editingBlog, slug: e.target.value})}
+                        placeholder="nazvanie-stati"
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label>Категория</Label>
+                      <Select value={editingBlog.category} onValueChange={(v) => setEditingBlog({...editingBlog, category: v})}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="production">Производство</SelectItem>
+                          <SelectItem value="materials">Материалы</SelectItem>
+                          <SelectItem value="design">Дизайн</SelectItem>
+                          <SelectItem value="trends">Тренды</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Время чтения</Label>
+                      <Input
+                        value={editingBlog.read_time}
+                        onChange={(e) => setEditingBlog({...editingBlog, read_time: e.target.value})}
+                        placeholder="5 мин"
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label>Изображение (URL)</Label>
+                      <Input
+                        value={editingBlog.image}
+                        onChange={(e) => setEditingBlog({...editingBlog, image: e.target.value})}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label>Краткое описание</Label>
+                      <Textarea
+                        value={editingBlog.excerpt}
+                        onChange={(e) => setEditingBlog({...editingBlog, excerpt: e.target.value})}
+                        className="mt-2"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <Label>Полный текст</Label>
+                      <Textarea
+                        value={editingBlog.content}
+                        onChange={(e) => setEditingBlog({...editingBlog, content: e.target.value})}
+                        className="mt-2"
+                        rows={8}
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <Button onClick={() => saveBlogPost(editingBlog)} className="flex-1">
+                        <Icon name="Check" size={16} className="mr-2" />
+                        Сохранить
+                      </Button>
+                      <Button variant="outline" onClick={() => { setEditingBlog(null); setIsAddingBlog(false); }} className="flex-1">
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </TabsContent>
 
           <TabsContent value="prices">
