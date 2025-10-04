@@ -40,6 +40,8 @@ interface BlogPost {
 }
 
 export default function AdminPanel() {
+  console.log('AdminPanel v3.0 loaded with 4 tabs');
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
