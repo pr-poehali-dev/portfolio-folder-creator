@@ -1,0 +1,5 @@
+{
+  "excludePoehaliScripts": true,
+  "excludeAnalytics": true,
+  "forceCleanBuild": true
+}
