@@ -19,6 +19,7 @@ const Admin = () => {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [authToken, setAuthToken] = useState('');
+  const [adminUsername, setAdminUsername] = useState('admin');
   
   console.log('Admin component loaded - VERSION 2.0');
 
@@ -55,7 +56,7 @@ const Admin = () => {
     const savedUsername = localStorage.getItem('admin_username');
     if (token && savedUsername) {
       setAuthToken(token);
-      setUsername(savedUsername);
+      setAdminUsername(savedUsername);
       setIsAuthenticated(true);
       loadPrices();
     }
@@ -805,7 +806,7 @@ const Admin = () => {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                               action: 'change_password',
-                              username,
+                              username: adminUsername,
                               old_password: currentPassword,
                               new_password: newPassword
                             })
@@ -851,7 +852,7 @@ const Admin = () => {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-600">Пользователь:</span>
-                        <span className="font-medium">{username}</span>
+                        <span className="font-medium">{adminUsername}</span>
                       </div>
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-600">Статус:</span>
