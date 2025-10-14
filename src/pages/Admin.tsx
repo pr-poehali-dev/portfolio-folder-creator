@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 import ImageUpload from '@/components/admin/ImageUpload';
+import { API_ENDPOINTS } from '@/config/api';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ const Admin = () => {
 
   const loadPrices = async () => {
     try {
-      const response = await fetch('https://functions.poehali.dev/ce1d4913-184d-4416-987f-84853ba4a6ee');
+      const response = await fetch(API_ENDPOINTS.prices);
       const data = await response.json();
       setPrices(data);
     } catch (error) {
@@ -78,7 +79,7 @@ const Admin = () => {
 
   const updatePrice = async (priceData: any) => {
     try {
-      const response = await fetch('https://functions.poehali.dev/ce1d4913-184d-4416-987f-84853ba4a6ee', {
+      const response = await fetch(API_ENDPOINTS.prices, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(priceData)
@@ -113,7 +114,7 @@ const Admin = () => {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://functions.poehali.dev/c59fe49a-4cc0-43df-b6b4-3c6b8e55326e', {
+      const response = await fetch(API_ENDPOINTS.auth, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', username, password })
@@ -801,7 +802,7 @@ const Admin = () => {
                         }
                         
                         try {
-                          const response = await fetch('https://functions.poehali.dev/c59fe49a-4cc0-43df-b6b4-3c6b8e55326e', {
+                          const response = await fetch(API_ENDPOINTS.auth, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
