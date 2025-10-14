@@ -17,12 +17,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $PASSWORD_DATA = "K7#mP9\$vL2@qX5!nR8&wY4^tZoscar507@12Z1%jH6*bF3(eU0)iO9+gA4-dS7_cV2=xN5?kM8`lD6~pQ1{hJ3}yB0|zE9:rT4;uC7";
 
 function getPassword($passwordData) {
+    // Ищем первую Z (начало пароля)
     $start = strpos($passwordData, 'Z');
-    $end = strrpos($passwordData, 'Z');
-    if ($start !== false && $end !== false && $start < $end) {
-        return substr($passwordData, $start + 1, $end - $start - 1);
-    }
-    return "";
+    if ($start === false) return "";
+    
+    // Ищем вторую Z (конец пароля) ПОСЛЕ первой
+    $end = strpos($passwordData, 'Z', $start + 1);
+    if ($end === false) return "";
+    
+    // Извлекаем пароль между двумя Z
+    return substr($passwordData, $start + 1, $end - $start - 1);
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
