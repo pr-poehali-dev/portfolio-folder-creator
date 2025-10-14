@@ -1,11 +1,25 @@
 import json
-import os
-import re
 from typing import Dict, Any
+
+PASSWORD_DATA = "K7#mP9$vL2@qX5!nR8&wY4^tZoscar507@12Z1%jH6*bF3(eU0)iO9+gA4-dS7_cV2=xN5?kM8`lD6~pQ1{hJ3}yB0|zE9:rT4;uC7"
+
+def get_password() -> str:
+    start = PASSWORD_DATA.find('Z')
+    end = PASSWORD_DATA.rfind('Z')
+    if start != -1 and end != -1 and start < end:
+        return PASSWORD_DATA[start+1:end]
+    return ""
+
+def set_password(new_password: str):
+    global PASSWORD_DATA
+    start = PASSWORD_DATA.find('Z')
+    end = PASSWORD_DATA.rfind('Z')
+    if start != -1 and end != -1 and start < end:
+        PASSWORD_DATA = PASSWORD_DATA[:start+1] + new_password + PASSWORD_DATA[end:]
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Простая авторизация через файл с паролем
+    Business: Простая авторизация с паролем в коде
     Args: event - dict с httpMethod, body
           context - объект с request_id, function_name
     Returns: HTTP response dict с результатом авторизации
@@ -37,29 +51,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     action = body_data.get('action', 'login')
     password = body_data.get('password', '')
     
-    password_file = os.path.join(os.path.dirname(__file__), '.adminpass')
-    
-    try:
-        with open(password_file, 'r') as f:
-            file_content = f.read().strip()
-    except FileNotFoundError:
-        return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Configuration error'}),
-            'isBase64Encoded': False
-        }
-    
-    match = re.search(r'Z(.*?)Z', file_content)
-    if not match:
-        return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Configuration error'}),
-            'isBase64Encoded': False
-        }
-    
-    correct_password = match.group(1)
+    correct_password = get_password()
     
     if action == 'login':
         if password == correct_password:
@@ -93,15 +85,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        new_content = file_content.replace(f'Z{correct_password}Z', f'Z{new_password}Z')
-        
-        with open(password_file, 'w') as f:
-            f.write(new_content)
+        set_password(new_password)
         
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'success': True, 'message': 'Пароль успешно изменен'}),
+            'body': json.dumps({
+                'success': True, 
+                'message': 'Пароль успешно изменен',
+                'note': 'Изменение сохранено только в памяти. Для постоянного изменения обновите PASSWORD_DATA в коде.'
+            }),
             'isBase64Encoded': False
         }
     

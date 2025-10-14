@@ -7,7 +7,7 @@
       "body": {
         "action": "login",
         "username": "admin",
-        "password": "admin"
+        "password": "oscar507@12"
       },
       "expectedStatus": 200,
       "expectedBody": {
@@ -23,7 +23,7 @@
       "body": {
         "action": "change_password",
         "username": "admin",
-        "old_password": "admin",
+        "old_password": "oscar507@12",
         "new_password": "newpass123"
       },
       "expectedStatus": 200,
