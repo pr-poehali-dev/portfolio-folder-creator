@@ -136,6 +136,8 @@ def handle_login(body_data: Dict[str, Any], conn) -> Dict[str, Any]:
     username = body_data.get('username')
     password = body_data.get('password')
     
+    print(f"LOGIN ATTEMPT: username={username}, password_length={len(password) if password else 0}")
+    
     if not username or not password:
         return {
             'statusCode': 400,
@@ -145,18 +147,26 @@ def handle_login(body_data: Dict[str, Any], conn) -> Dict[str, Any]:
         }
     
     password_hash = hash_password(password)
+    print(f"COMPUTED HASH: {password_hash}")
     
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute('''
-        SELECT id, username, created_at 
+        SELECT id, username, password_hash, created_at 
         FROM admins 
-        WHERE username = %s AND password_hash = %s
-    ''', (username, password_hash))
+        WHERE username = %s
+    ''', (username,))
     
     admin = cursor.fetchone()
+    
+    if admin:
+        print(f"DB HASH: {admin['password_hash']}")
+        print(f"MATCH: {admin['password_hash'] == password_hash}")
+    else:
+        print(f"USER NOT FOUND: {username}")
+    
     cursor.close()
     
-    if not admin:
+    if not admin or admin['password_hash'] != password_hash:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
