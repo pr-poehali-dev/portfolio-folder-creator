@@ -1,43 +1,24 @@
 import json
-import os
 from typing import Dict, Any
-import psycopg2
 
-def get_password_from_db(conn) -> str:
-    cursor = conn.cursor()
-    cursor.execute("SELECT setting_value FROM admin_settings WHERE setting_key = 'admin_password'")
-    result = cursor.fetchone()
-    cursor.close()
-    
-    if result:
-        password_data = result[0]
-        start = password_data.find('Z')
-        end = password_data.rfind('Z')
-        if start != -1 and end != -1 and start < end:
-            return password_data[start+1:end]
+# ====================================
+# НАСТРОЙКА ПАРОЛЯ
+# Пароль находится между символами Z
+# Чтобы изменить пароль, замените текст между Z на новый пароль
+# Пример: ...Zмой_новый_парольZ...
+# ====================================
+PASSWORD_DATA = "K7#mP9$vL2@qX5!nR8&wY4^tZoscar507@12Z1%jH6*bF3(eU0)iO9+gA4-dS7_cV2=xN5?kM8`lD6~pQ1{hJ3}yB0|zE9:rT4;uC7"
+
+def get_password() -> str:
+    start = PASSWORD_DATA.find('Z')
+    end = PASSWORD_DATA.rfind('Z')
+    if start != -1 and end != -1 and start < end:
+        return PASSWORD_DATA[start+1:end]
     return ""
-
-def set_password_in_db(conn, new_password: str):
-    cursor = conn.cursor()
-    cursor.execute("SELECT setting_value FROM admin_settings WHERE setting_key = 'admin_password'")
-    result = cursor.fetchone()
-    
-    if result:
-        old_data = result[0]
-        start = old_data.find('Z')
-        end = old_data.rfind('Z')
-        if start != -1 and end != -1 and start < end:
-            new_data = old_data[:start+1] + new_password + old_data[end:]
-            cursor.execute(
-                "UPDATE admin_settings SET setting_value = %s, updated_at = CURRENT_TIMESTAMP WHERE setting_key = 'admin_password'",
-                (new_data,)
-            )
-            conn.commit()
-    cursor.close()
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Авторизация с паролем в базе данных
+    Business: Простая авторизация с паролем в коде
     Args: event - dict с httpMethod, body
           context - объект с request_id, function_name
     Returns: HTTP response dict с результатом авторизации
@@ -65,73 +46,46 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    database_url = os.environ.get('DATABASE_URL')
-    if not database_url:
-        return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Database not configured'}),
-            'isBase64Encoded': False
-        }
+    body_data = json.loads(event.get('body', '{}'))
+    action = body_data.get('action', 'login')
+    password = body_data.get('password', '')
     
-    conn = psycopg2.connect(database_url)
+    correct_password = get_password()
     
-    try:
-        body_data = json.loads(event.get('body', '{}'))
-        action = body_data.get('action', 'login')
-        password = body_data.get('password', '')
-        
-        correct_password = get_password_from_db(conn)
-        
-        if action == 'login':
-            if password == correct_password:
-                return {
-                    'statusCode': 200,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({
-                        'success': True,
-                        'token': 'admin_authenticated',
-                        'admin': {'username': 'admin'}
-                    }),
-                    'isBase64Encoded': False
-                }
-            else:
-                return {
-                    'statusCode': 401,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Неверный пароль'}),
-                    'isBase64Encoded': False
-                }
-        
-        elif action == 'change_password':
-            old_password = body_data.get('old_password', '')
-            new_password = body_data.get('new_password', '')
-            
-            if old_password != correct_password:
-                return {
-                    'statusCode': 401,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Неверный текущий пароль'}),
-                    'isBase64Encoded': False
-                }
-            
-            set_password_in_db(conn, new_password)
-            
+    if action == 'login':
+        if password == correct_password:
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                 'body': json.dumps({
-                    'success': True, 
-                    'message': 'Пароль успешно изменен'
+                    'success': True,
+                    'token': 'admin_authenticated',
+                    'admin': {'username': 'admin'}
                 }),
                 'isBase64Encoded': False
             }
-        
+        else:
+            return {
+                'statusCode': 401,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Неверный пароль'}),
+                'isBase64Encoded': False
+            }
+    
+    elif action == 'change_password':
         return {
-            'statusCode': 400,
+            'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Invalid action'}),
+            'body': json.dumps({
+                'success': True, 
+                'message': 'Для смены пароля отредактируйте файл backend/auth/index.py (строка 11) и измените текст между символами Z'
+            }),
             'isBase64Encoded': False
         }
-    finally:
-        conn.close()
+    
+    return {
+        'statusCode': 400,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'error': 'Invalid action'}),
+        'isBase64Encoded': False
+    }
